@@ -27,6 +27,7 @@ export default defineConfig(({ command }) => ({
       : [
           ...[
             'css-link',
+            'css-link-sfc',
             'css-style',
             ...(isBundledDev ? [] : ['missing-file']),
             'missing-import',

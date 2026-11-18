@@ -9,6 +9,7 @@ import {
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
 import { moduleUrlToBrowserUrl } from '../shared/utils'
+import { cleanCssUrl } from './cssHmrUrl'
 import { ErrorOverlay, cspNonce, overlayId } from './overlay'
 // @ts-expect-error internal virtual module
 import '@vite/env'
@@ -117,12 +118,6 @@ if (typeof window !== 'undefined') {
   })
 }
 
-function cleanUrl(pathname: string): string {
-  const url = new URL(pathname, 'http://vite.dev')
-  url.searchParams.delete('direct')
-  return url.pathname + url.search
-}
-
 let isFirstUpdate = true
 const outdatedLinkTags = new WeakSet<HTMLLinkElement>()
 
@@ -221,7 +216,7 @@ async function handleMessage(payload: HotPayload) {
           // css-update
           // this is only sent when a css file referenced with <link> is updated
           const { path, timestamp } = update
-          const searchUrl = cleanUrl(path)
+          const searchUrl = cleanCssUrl(path)
           // can't use querySelector with `[href*=]` here since the link may be
           // using relative paths so we need to use link.href to grab the full
           // URL for the include check.
@@ -229,7 +224,8 @@ async function handleMessage(payload: HotPayload) {
             document.querySelectorAll<HTMLLinkElement>('link'),
           ).find(
             (e) =>
-              !outdatedLinkTags.has(e) && cleanUrl(e.href).includes(searchUrl),
+              !outdatedLinkTags.has(e) &&
+              cleanCssUrl(e.href).includes(searchUrl),
           )
 
           if (!el) {

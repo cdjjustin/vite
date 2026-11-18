@@ -1493,6 +1493,35 @@ if (!isBuild) {
   )
 
   test(
+    'CSS HMR on a Vue SFC style <link> keeps valueless query flags',
+    ssrCssLinkUnsupported,
+    async () => {
+      await page.goto(viteTestUrl + '/css-link-sfc/index.html')
+      await expect.poll(() => getColor('.test-css-link-sfc')).toBe('orange')
+
+      const initialHref = await page
+        .locator('link[rel="stylesheet"]')
+        .getAttribute('href')
+      expect(initialHref).toContain('?vue&type=style&index=0&lang.css')
+      expect(initialHref).not.toContain('lang.css=')
+
+      editFile('css-link-sfc/style.vue', (code) =>
+        code.replace('color: orange;', 'color: blue;'),
+      )
+      await expect.poll(() => getColor('.test-css-link-sfc')).toBe('blue')
+
+      const updatedHref = await page
+        .locator('link[rel="stylesheet"]')
+        .getAttribute('href')
+      expect(updatedHref).toMatch(/[?&]vue&/)
+      expect(updatedHref).not.toMatch(/[?&]vue=/)
+      expect(updatedHref).toMatch(/lang\.css(?:&|$)/)
+      expect(updatedHref).not.toMatch(/lang\.css=/)
+      expect(updatedHref).toMatch(/[?&]t=\d+/)
+    },
+  )
+
+  test(
     'deduplicate server rendered link stylesheet',
     ssrCssLinkUnsupported,
     async () => {
